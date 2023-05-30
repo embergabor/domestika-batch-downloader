@@ -11,11 +11,11 @@ const fetch = require("node-fetch");
 const debug = false;
 const debug_data = [];
 
-const session= '5jPt%2FfugtvjPfAyucfu06rK4ltwptKwsgiZBi3%2F%2FryM5xfKA4spU9NXTH78jWfV2CrlvC3%2BVK4Srm2ABQn70bbAjOnCyPsn2Hiyk%2BLNq%2B7sM9QYQMqOSPI6BhepQKVctaZOjbJYFjnnQSJl0zIUXXJyut%2FrPMyh%2FxNVPF3PF0Y5tyNvIg4Gmoiyv6KJZv65aSOGivfNgEIucosDVOG%2FqSdbq7sqxqzp3GUAgcRwXTrVY1YvbNpAbfFp1z%2BFiOefBmSd%2B7VgiUVTjXKkqH9ET2fClpCjqAbrlXMog%2F6lhaMNZU2NryEEfd46p%2BuJKM3EN0ZLmY5V%2FqbDERhojr61Xvl6ofRB9OAOUp1zV4k7C5Vz7AkbbUesnDEnBqvFBTg94gxgqEjylWQnwpT1kFZMPUvKH0%2BVDohGfMQoY1W4NW7QtMJp5amb1kd6mTeHqBih%2FwUKOrbysAUITxoT1%2FlQwbjbiZ0pFXbAAGJ6BbQthRaOwLJlL0N83TZg%2FhmchOo5FZwIHg27ZpsAHLTyC4jmqMLgCaG5FnlXTV7kvIgGUCK8z3WSPRUXDXTlWZFhDkCRthAw7Uv4DuqoxM%2BRxNTsq%2FokLNlq6TPmO7bg1flSiirb1bTEl6HdGTNfGZttafnpClWtMtuLwB5siOca6QQZ3vvrxtLTz3IaYept2MJvWINkRYKXAkn9479nUg5hKP%2FYSjuT5PTPGmPoFuSLq2Ktkk1V5WKQFmw%3D%3D--Cb7abO2sX%2FYvsktt--Aoe1PXnLF%2BWOL6BjXa8MXg%3D%3D';
+const session= 'G0HrTgoI7J%2Buyhy%2FWNjRrph3u9JXJXJMZgAUow4Jwiq6E25%2BLbosWOxVBEa3EGOOalU8R7SEPa8bkHdljh6fO0TV%2FCMk36y0lA7Zlo8LJt468XLADfUZUjRTSX%2FZkH6LA%2BITQ4%2BAQENMJeQ4gk7%2BycovlQ0dAf6VYjxdvaVukyjzJkCTz491%2BKwYwH3CY2OxRa5H0hd3muwwHR0sE9sxTh38sUSKLE4UaXEhy7pDLlj06Lyt6h4m8iDbEdNq5MWnkUI5MsWpgWZeJSjxR%2FVmQpRhlvWeCvTcOd1cuVn1dJtxa9G1WjYevQ3Gc8TFIWnoGQppdrlVBggVT4fsPXAKhKRJTNY3Bv0ER88bcWbufz5pomQCe7xLRr7K%2B8BK0t190AZX1B5Lln4Gjlfhj6J8bCg9MHdUQoZXlY5tfnPIBQElFLK25pojn2AkxlmHABbCxem5EltNlIdXVIZLV9RuJWCtY%2BFByg4tchh2saCdJ8%2FmJ9kn6SoUySa5J9VA0o5Sl1ivRfGDTYI%2FzRkYDRS7gnoT2opPJh5isCh5jqzQT4pG3DvfGH%2FZePCVyhCNdn8c0X0X8Z3JaZ6TRew3TjP8cQYzitJgpXw0Pbu06lYFZLn%2B%2FBYz3cehJyKkyN%2F2ndjMZPHiDqVYaxaEx9jpHFsuvfsRPETtB8qVobdooux2Bi%2Fmdkjd4yGEZxHeYaKiCtcdD5Gr1HWOZIiNS1Jxxmn85r0U--ZkjQO1qeD%2F8mNWDZ--uyJBEIRByNgQ%2FbUtNEO5NA%3D%3D';
 
 
 //Credentials needed for the access token to get the final project
-const _credentials_ = '{%22accessToken%22:%22pOEcPRTn98yDyT9hOc5jSnHgslssDF8iJr-iL5xR3pQ%22%2C%22refreshToken%22:%22c8G-e1z__PHa7bsC3CENKxzOKRAiXiZjBmY-z7VeOpc%22%2C%22isEmpty%22:false}';
+const _credentials_ = '{%22accessToken%22:%22k-MHHGTAXUPSlIYUEQ-nJ16M63-pKnSpLI6o65L-jAQ%22%2C%22refreshToken%22:%22HaQkEog-ZlUUWXNLU2kvQOp4J-zDfZq0aD5LmLwQw6c%22%2C%22isEmpty%22:false}';
 
 
 const subtitle_lang = 'en';
@@ -54,9 +54,23 @@ async function asyncReadFile(filename) {
 
 async function downloadCourses() {
     const course_urls = await asyncReadFile("input.txt");
-    for(const course of course_urls) {
-        console.log(course);
-        await scrapeSite(course);
+    for(let course of course_urls) {
+        if(course.trim().length > 0) {
+            try {
+                if (!course.endsWith("/course")) {
+                    course += "/course";
+                }
+                console.log(course);
+                await scrapeSite(course);
+            } catch (error) {
+                console.error('An error occurred:', error.message);
+                if (error.message.includes("Unexpected end of JSON")) {
+                    console.log("Your Domestika credentials are not valid! Please log in and copy your credentials to index.js");
+                    process.exit();
+                }
+                break;
+            }
+        }
     }
 }
 
@@ -76,7 +90,7 @@ async function scrapeSite(course_url) {
     let title = $('h1.course-header-new__title')
         .text()
         .trim()
-        .replace(/[/\\?%*:'|"<>]/g, '').replaceAll(" ","_");
+        .replace(/[/\\?!%*:'|"<>]/g, '').replaceAll(" ","_");
 
     let totalVideos = 1;
 
@@ -87,7 +101,7 @@ async function scrapeSite(course_url) {
             title: $(units[i])
                 .text()
                 .trim()
-                .replace(/[/\\?%*:'|"<>]/g, '').replaceAll(" ","_"),
+                .replace(/[/\\?!%*:'|"<>]/g, '').replaceAll(" ","_"),
             videoData: videoData,
         });
 
@@ -124,23 +138,15 @@ async function scrapeSite(course_url) {
             }
 
             const unitNumber = unit.title.slice(0, 2).replace("U","S");
-            const filename = unitNumber + "E" + (a+1) + "-" + unit.title.slice(3).trim().replace(/[/\\?%*:|"<>]/g, '-').replaceAll(" ", "_") + "-" + vData.title.trim().replace(/[/\\?%*:|"<>]/g, '-').replaceAll(" ", "_");
+            const filename = unitNumber + "E" + (a+1) + "_" + vData.title.trim().replace(/[/\\?!%*':|"<>]/g, '').replaceAll(" ", "_");
             console.log(filename);
-            console.log("domestika_courses/" + title + "/" + filename + ".mp4");
-            if (!fs.existsSync("domestika_courses/" + title + "/" + filename + ".mp4")) {
-                let log = await exec(`./N_m3u8DL-RE -sv res="1080*":codec=hvc1:for=best "${vData.playbackURL}" --save-dir "domestika_courses/${title}" --save-name "${filename}"`);
-                let log2 = await exec(`./N_m3u8DL-RE --auto-subtitle-fix --sub-format SRT --select-subtitle lang="${subtitle_lang}":for=all "${vData.playbackURL}" --save-dir "domestika_courses/${title}" --save-name "${filename}"`);
+            console.log("domestika_courses/" + title + "/" + unit.title + "/" + filename + ".mp4");
+            if (!fs.existsSync("domestika_courses/" + title + "/" + unit.title + "/" + filename + ".mp4")) {
+                let log = await exec(`./N_m3u8DL-RE -sv res="1080*":codec=hvc1:for=best "${vData.playbackURL}" --save-dir "domestika_courses/${title}/${unit.title}" --save-name "${filename}" --auto-subtitle-fix --sub-format SRT --select-subtitle lang="${subtitle_lang}" -M format=mp4`);
+                //let log2 = await exec(`./N_m3u8DL-RE --auto-subtitle-fix --sub-format SRT --select-subtitle lang="${subtitle_lang}":for=all "${vData.playbackURL}" --save-dir "domestika_courses/${title}" --save-name "${filename}"`);
             } else {
                 console.log("Already downloaded");
             }
-            if (!fs.existsSync("domestika_courses/" + title + "/" + filename + ".remux.mp4")) {
-                if (fs.existsSync("domestika_courses/" + title + "/" + filename + ".mp4") && fs.existsSync("domestika_courses/" + title + "/" + filename + ".en.srt")) {
-                    let log3 = exec(`ffmpeg -i "domestika_courses/${title}/${filename}.mp4" -i "domestika_courses/${title}/${filename}.en.srt" -c copy -c:s mov_text "domestika_courses/${title}/${filename}.remux.mp4"`);
-                } else if (fs.existsSync("domestika_courses/" + title + "/" + filename + ".mp4")) {
-                    await exec(`cp "domestika_courses/${title}/${filename}.mp4" "domestika_courses/${title}/${filename}.remux.mp4"`);
-                }
-            }
-
 
             if (debug) {
                 debug_data.push({
@@ -156,24 +162,13 @@ async function scrapeSite(course_url) {
     }
 
     await browser.close();
-
-    if (fs.existsSync("fl.txt")){
-        await exec(`rm "fl.txt"`);
-    }
-
-    if (!fs.existsSync("domestika_courses/" + title + ".mp4")){
-        console.log("Concat videos")
-        await exec(`find "domestika_courses/${title}" -name "*.remux.mp4" | sort | sed 's:\ :\\\ :g'| sed 's/^/file /' > fl.txt;`);
-        let log4 = await exec(`ffmpeg -f concat -safe 0 -i fl.txt -c copy -scodec copy "domestika_courses/${title}.mp4"`);
-        await exec(`rm "fl.txt"`);
-        console.log(log4);
-    }
+    const mergelog = await exec(`./merge_chapters.sh domestika_courses/${title}`);
+    console.log(mergelog);
 
     if (debug) {
         fs.writeFileSync('log.json', JSON.stringify(debug_data));
         console.log('Log File Saved');
     }
-
 
     console.log('All Videos Downloaded');
 }

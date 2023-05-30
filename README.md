@@ -1,16 +1,16 @@
 # Node JS Tool to download full courses from Domestika
 
-This is a fork of https://github.com/ReneR97/domestika-downloader
+**This is a fork of https://github.com/ReneR97/domestika-downloader**
 
-This script is a simple way to download a full course from Domestika.
+This script is a simple way to download a list of full courses from Domestika. It can also merge all the lessons of a course into a single video with embedded subtitles.
 
 > **Warning**
 > You need to own the course you want to download. So you either have to have bought it or got it for "free" with your premium account.
 
 ## Requirements
-Domestika account
-N_m3u8DL-RE
-ffmpeg
+- Domestika account
+- N_m3u8DL-RE https://github.com/nilaoda/N_m3u8DL-RE/releases
+- ffmpeg
 
 ## Installation
 
@@ -57,7 +57,3 @@ npm run start.
 ```
 
 All the courses will be downloaded in a folder called "domestika_courses/{coursename}/".
-
-## Special Thanks
-
-Special thanks to [@Cybasaint](https://www.github.com/Cybasaint) for helping with the project and giving me access to his domestika account for testing.
