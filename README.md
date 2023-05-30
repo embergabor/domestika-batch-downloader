@@ -1,9 +1,16 @@
 # Node JS Tool to download full courses from Domestika
 
+This is a fork of https://github.com/ReneR97/domestika-downloader
+
 This script is a simple way to download a full course from Domestika.
 
 > **Warning**
 > You need to own the course you want to download. So you either have to have bought it or got it for "free" with your premium account.
+
+## Requirements
+Domestika account
+N_m3u8DL-RE
+ffmpeg
 
 ## Installation
 
@@ -12,7 +19,6 @@ Once you downloaded the Project, open the "index.js" file.
 You will find the following variables:
 
 ```bash
-  const course_url = '';
   const subtitle_lang = 'en';
   const cookies;
   const _credentials_ = "";
