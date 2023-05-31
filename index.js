@@ -114,19 +114,22 @@ async function scrapeSite(course_url) {
         totalVideos += videoData.length;
     }
 
-   /* let regex_final = /courses\/(.*?)-/gm;
+   let regex_final = /courses\/(.*?)-/gm;
     let final_project_id = regex_final.exec($(units[units.length - 1]).attr('href'))[1];
     let final_data = await fetchFromApi(`https://api.domestika.org/api/courses/${final_project_id}/final-project?with_server_timing=true`, 'finalProject.v1', access_token);
     final_project_id = final_data.data.relationships.video.data.id;
     final_data = await fetchFromApi(`https://api.domestika.org/api/videos/${final_project_id}?with_server_timing=true`, 'video.v1', access_token);
 
-    allVideos.push({
-        title: 'U9-Final_project',
-        videoData: [{ playbackURL: final_data.data.attributes.playbackUrl,
-            title: 'Final project',
-            chapterThumb: final_data.data.attributes.cover.original.url
-        }],
-    });*/
+    if(final_data.data.attributes.playbackUrl && final_data.data.attributes.playbackUrl != undefined) {
+        allVideos.push({
+            title: 'U9-Final_project',
+            videoData: [{ playbackURL: final_data.data.attributes.playbackUrl,
+                title: 'Final project',
+                chapterThumb: final_data.data.attributes.cover.original.url
+            }],
+        });
+    }
+
 
     //Loop through all files and download them
 
@@ -234,12 +237,12 @@ async function getInitialProps(url) {
             courseCoverURL = data.course.cover;
 
         } else if (data.video && data.video != undefined) {
-            const el = data.video;
+            /*const el = data.video;
             videoData.push({
                 playbackURL: el.playbackURL,
                 title: "Final project",
                 chapterThumb: el.cover
-            });
+            });*/
         }
     }
 
