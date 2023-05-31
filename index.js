@@ -145,17 +145,16 @@ async function scrapeSite(course_url) {
                 fs.mkdirSync(`domestika_courses/${title}/${unit.title}/`, { recursive: true });
             }
 
-            const unitNumber = unit.title.slice(0, 2).replace("U","S");
+
+            const unitNumber = unit.title == "Final-project" ? "S9" : unit.title.slice(0, 2).replace("U","S");
             const filename = unitNumber + "E" + (a+1) + "-" + vData.title.trim().replace(/[/\\?!%*':|"<>]/g, '').replaceAll(" ", "-");
-            console.log(filename);
             console.log("domestika_courses/" + title + "/" + unit.title + "/" + filename + ".mp4");
             if (!fs.existsSync("domestika_courses/" + title + "/" + unit.title + "/" + filename + ".mp4")) {
                 let log = await exec(`./N_m3u8DL-RE -sv res="1080*":codec=hvc1:for=best "${vData.playbackURL}" --save-dir "domestika_courses/${title}/${unit.title}" --save-name "${filename}" --auto-subtitle-fix --sub-format SRT --select-subtitle lang="${subtitle_lang}" -M format=mp4`);
-                //let log2 = await exec(`./N_m3u8DL-RE --auto-subtitle-fix --sub-format SRT --select-subtitle lang="${subtitle_lang}":for=all "${vData.playbackURL}" --save-dir "domestika_courses/${title}" --save-name "${filename}"`);
+                await exec(`ffmpeg -i "domestika_courses/${title}/${unit.title}/${filename}.mp4" -metadata title="${vData.title}" -c copy -scodec copy temp.mp4 && mv temp.mp4 "domestika_courses/${title}/${unit.title}/${filename}.mp4"`);
             } else {
                 console.log("Already downloaded");
             }
-            await exec(`ffmpeg -i "domestika_courses/${title}/${unit.title}/${filename}.mp4" -metadata title="${vData.title}" -c copy -scodec copy temp.mp4 && mv temp.mp4 "domestika_courses/${title}/${unit.title}/${filename}.mp4"`);
 
             const thumbnailURL = vData.chapterThumb;
             console.log("thumbnailurl: " + thumbnailURL);
