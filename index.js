@@ -11,11 +11,10 @@ const fetch = require("node-fetch");
 const debug = false;
 const debug_data = [];
 
-const session= 'G0HrTgoI7J%2Buyhy%2FWNjRrph3u9JXJXJMZgAUow4Jwiq6E25%2BLbosWOxVBEa3EGOOalU8R7SEPa8bkHdljh6fO0TV%2FCMk36y0lA7Zlo8LJt468XLADfUZUjRTSX%2FZkH6LA%2BITQ4%2BAQENMJeQ4gk7%2BycovlQ0dAf6VYjxdvaVukyjzJkCTz491%2BKwYwH3CY2OxRa5H0hd3muwwHR0sE9sxTh38sUSKLE4UaXEhy7pDLlj06Lyt6h4m8iDbEdNq5MWnkUI5MsWpgWZeJSjxR%2FVmQpRhlvWeCvTcOd1cuVn1dJtxa9G1WjYevQ3Gc8TFIWnoGQppdrlVBggVT4fsPXAKhKRJTNY3Bv0ER88bcWbufz5pomQCe7xLRr7K%2B8BK0t190AZX1B5Lln4Gjlfhj6J8bCg9MHdUQoZXlY5tfnPIBQElFLK25pojn2AkxlmHABbCxem5EltNlIdXVIZLV9RuJWCtY%2BFByg4tchh2saCdJ8%2FmJ9kn6SoUySa5J9VA0o5Sl1ivRfGDTYI%2FzRkYDRS7gnoT2opPJh5isCh5jqzQT4pG3DvfGH%2FZePCVyhCNdn8c0X0X8Z3JaZ6TRew3TjP8cQYzitJgpXw0Pbu06lYFZLn%2B%2FBYz3cehJyKkyN%2F2ndjMZPHiDqVYaxaEx9jpHFsuvfsRPETtB8qVobdooux2Bi%2Fmdkjd4yGEZxHeYaKiCtcdD5Gr1HWOZIiNS1Jxxmn85r0U--ZkjQO1qeD%2F8mNWDZ--uyJBEIRByNgQ%2FbUtNEO5NA%3D%3D';
-
+const session= 'JCq%2BsBo%2F3s1CRHdif6vEqtACfOqrtbFrPZhhnPmSWlPTbF9dbsi1BT3hy47Bm4IANCYTlnVqOn9H%2B2KlJP4qv%2BRBYYG8paYJTBZipT7qUku7HIXbJFYXmuxkYNdhCEsHQmKhmJHloRxAsu%2BfZ%2BHfakUcvmUjHLxd6IpNZ%2FXA8PBupzhsBhAOghNLL3tZf%2FMCgHuIk1Oe%2BjXuv9UyZJEByivf4eBKTTnls4Tu132gDJav8k3BEVaVTpT2WjRfXDpbnmeZ%2FIfPt6zlXYuwiRu7VZD2vMHSJUQgycYFzpZdufUx4ujIIDovHqlpN9ZCi9UBodhETWwI04NTig7LzJG7dJHyLmtdnyRVnOYwL0gzVzb0O5jFxYbyf17zHAt24sn34LY%2BFkSVEy4caO0zlpi2KFqkgWjwF3D7IkUAmuDdi%2BZbfNJQ0KBacKff2nN6Bp%2Fp8Bbxj0D%2F4SZVY5qS1KTUYsuadG1bgps%2F2CR6yrMKB6PRtLru9mi5029JcILHHiuSxh2C2oVV6yRn%2Fz%2FrGeQ6LS6OBeWqaNnWoqJxLRgr4E%2Bb3%2FuoH9DcAlqMiWtgBriwPRCNs3gConOpHdtvWa16Cd4mwX3bS%2ByY3yDG9yUqhQeNa7SC1EM%3D--zbsnzjFlzSye41yb--X0nYrJGFmZXWIfZUtzkU2A%3D%3D';
 
 //Credentials needed for the access token to get the final project
-const _credentials_ = '{%22accessToken%22:%22k-MHHGTAXUPSlIYUEQ-nJ16M63-pKnSpLI6o65L-jAQ%22%2C%22refreshToken%22:%22HaQkEog-ZlUUWXNLU2kvQOp4J-zDfZq0aD5LmLwQw6c%22%2C%22isEmpty%22:false}';
+const _credentials_ = '{%22accessToken%22:%22hYtvKlM7jir8fM5L58_i9320QuQdYckJi67K098OQcE%22%2C%22refreshToken%22:%22lIEL-UhgWOxvjn7f3YcdsWzXWG_pfKyitPCQ1nhyzn8%22%2C%22isEmpty%22:false}';
 
 
 const subtitle_lang = 'en';
@@ -26,9 +25,15 @@ const cookies = [
         name: '_domestika_session',
         value: session,
         domain: 'www.domestika.org',
-    },
+    }
 ];
 
+let courseCoverURL = "";
+
+//Get access token from the credentials
+let access_token = decodeURI(_credentials_);
+let regex_token = /accessToken\":\"(.*?)\"/gm;
+access_token = regex_token.exec(access_token)[1];
 
 //Check if the N_m3u8DL-RE.exe exists, throw error if not
 if (fs.existsSync('N_m3u8DL-RE')) {
@@ -90,30 +95,26 @@ async function scrapeSite(course_url) {
     let title = $('h1.course-header-new__title')
         .text()
         .trim()
-        .replace(/[/\\?!%*:'|"<>]/g, '').replaceAll(" ","_");
+        .replace(/[/\\?!%*:\'\’|"<>]/g, '').replaceAll(" ","-");
 
+    console.log("Title: " + title);
     let totalVideos = 1;
 
     //Get all the links to the m3u8 files
-    for (let i = 0; i < units.length - 1; i++) {
+    for (let i = 0; i < units.length ; i++) {
         let videoData = await getInitialProps($(units[i]).attr('href'));
         allVideos.push({
             title: $(units[i])
                 .text()
                 .trim()
-                .replace(/[/\\?!%*:'|"<>]/g, '').replaceAll(" ","_"),
+                .replace(/[/\\?!%*:|"<>]/g, '').replaceAll(" ","-"),
             videoData: videoData,
         });
 
         totalVideos += videoData.length;
     }
 
-    //Get access token from the credentials
-    let access_token = decodeURI(_credentials_);
-    let regex_token = /accessToken\":\"(.*?)\"/gm;
-    access_token = regex_token.exec(access_token)[1];
-
-    let regex_final = /courses\/(.*?)-/gm;
+   /* let regex_final = /courses\/(.*?)-/gm;
     let final_project_id = regex_final.exec($(units[units.length - 1]).attr('href'))[1];
     let final_data = await fetchFromApi(`https://api.domestika.org/api/courses/${final_project_id}/final-project?with_server_timing=true`, 'finalProject.v1', access_token);
     final_project_id = final_data.data.relationships.video.data.id;
@@ -121,15 +122,22 @@ async function scrapeSite(course_url) {
 
     allVideos.push({
         title: 'U9-Final_project',
-        videoData: [{ playbackURL: final_data.data.attributes.playbackUrl, title: 'Final project' }],
-    });
+        videoData: [{ playbackURL: final_data.data.attributes.playbackUrl,
+            title: 'Final project',
+            chapterThumb: final_data.data.attributes.cover.original.url
+        }],
+    });*/
 
     //Loop through all files and download them
 
-    console.log("Title: " + title);
+
     let count = 0;
+    console.log("courseThumb: " + courseCoverURL);
+    downloadImage(courseCoverURL, "domestika_courses/" + title, "poster.jpg")
+
     for (let i = 0; i < allVideos.length; i++) {
         const unit = allVideos[i];
+
         for (let a = 0; a < unit.videoData.length; a++) {
             const vData = unit.videoData[a];
 
@@ -138,7 +146,7 @@ async function scrapeSite(course_url) {
             }
 
             const unitNumber = unit.title.slice(0, 2).replace("U","S");
-            const filename = unitNumber + "E" + (a+1) + "_" + vData.title.trim().replace(/[/\\?!%*':|"<>]/g, '').replaceAll(" ", "_");
+            const filename = unitNumber + "E" + (a+1) + "-" + vData.title.trim().replace(/[/\\?!%*':|"<>]/g, '').replaceAll(" ", "-");
             console.log(filename);
             console.log("domestika_courses/" + title + "/" + unit.title + "/" + filename + ".mp4");
             if (!fs.existsSync("domestika_courses/" + title + "/" + unit.title + "/" + filename + ".mp4")) {
@@ -147,6 +155,11 @@ async function scrapeSite(course_url) {
             } else {
                 console.log("Already downloaded");
             }
+            await exec(`ffmpeg -i "domestika_courses/${title}/${unit.title}/${filename}.mp4" -metadata title="${vData.title}" -c copy -scodec copy temp.mp4 && mv temp.mp4 "domestika_courses/${title}/${unit.title}/${filename}.mp4"`);
+
+            const thumbnailURL = vData.chapterThumb;
+            console.log("thumbnailurl: " + thumbnailURL);
+            downloadImage(thumbnailURL, "domestika_courses/" + title + "/" + unit.title, filename + ".jpg")
 
             if (debug) {
                 debug_data.push({
@@ -162,8 +175,11 @@ async function scrapeSite(course_url) {
     }
 
     await browser.close();
-    const mergelog = await exec(`./merge_chapters.sh domestika_courses/${title}`);
-    console.log(mergelog);
+
+    /*if (!fs.existsSync(`domestika_courses/${title}/${title}.mkv`)) {
+      const mergelog = await exec(`./merge_chapters.sh domestika_courses/${title}`);
+      console.log(mergelog);
+    }*/
 
     if (debug) {
         fs.writeFileSync('log.json', JSON.stringify(debug_data));
@@ -171,6 +187,27 @@ async function scrapeSite(course_url) {
     }
 
     console.log('All Videos Downloaded');
+}
+
+function downloadImage(imageUrl, destinationPath, filename) {
+    console.log("" + imageUrl);
+    const https = require('https');
+    const fs = require('fs');
+
+    const file = fs.createWriteStream(destinationPath + "/" + filename);
+
+    https.get(imageUrl, (response) => {
+        response.on('data', (data) => {
+            file.write(data);
+        });
+
+        response.on('end', () => {
+            file.end();
+            console.log('Image downloaded successfully.');
+        });
+    }).on('error', (err) => {
+        console.error('Error downloading the image:', err);
+    });
 }
 
 async function getInitialProps(url) {
@@ -184,12 +221,25 @@ async function getInitialProps(url) {
     let videoData = [];
 
     if (data && data != undefined) {
-        for (let i = 0; i < data.videos.length; i++) {
-            const el = data.videos[i];
+        if(data.videos && data.videos != undefined) {
+            for (let i = 0; i < data.videos.length; i++) {
+                const el = data.videos[i];
+                videoData.push({
+                    playbackURL: el.video.playbackURL,
+                    title: el.video.title,
+                    chapterThumb: el.video.cover
+                });
 
+            }
+            console.log("data course cover: " + data.course.cover);
+            courseCoverURL = data.course.cover;
+
+        } else if (data.video && data.video != undefined) {
+            const el = data.video;
             videoData.push({
-                playbackURL: el.video.playbackURL,
-                title: el.video.title,
+                playbackURL: el.playbackURL,
+                title: "Final project",
+                chapterThumb: el.cover
             });
         }
     }
@@ -200,6 +250,7 @@ async function getInitialProps(url) {
 }
 
 async function fetchFromApi(apiURL, accept_version, access_token) {
+    console.log(apiURL);
     const response = await fetch(apiURL, {
         method: 'get',
         headers: {
