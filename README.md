@@ -2,7 +2,15 @@
 
 **This is a fork of https://github.com/ReneR97/domestika-downloader**
 
-This script is a simple way to download a list of full courses from Domestika. It can also merge all the lessons of a course into a single video with embedded subtitles.
+This tool is a batch downloader for Domestika courses. 
+It downloads all courses defined in the input.txt and uses a file structure that is compatible with Plex TV Show library.
+Every course is handled as a 'Show' and every unit is a new 'Season'. This tool also downloads the course thunnail and a thumbnail for every lesson.
+
+![plex1.png](images%2Fplex1.png)
+
+![plex2.png](images%2Fplex2.png)
+
+![plex3.png](images%2Fplex3.png)
 
 > **Warning**
 > You need to own the course you want to download. So you either have to have bought it or got it for "free" with your premium account.
@@ -20,15 +28,13 @@ You will find the following variables:
 
 ```bash
   const subtitle_lang = 'en';
-  const cookies;
+  const session = '';
   const _credentials_ = "";
 ```
 
 The course_url is just the full URL of the course you want to download. For example:
 
 https://www.domestika.org/en/courses/3086-creating-animated-stories-with-after-effects/course
-
-IMPORTANT: you have to be on the "content" page. You know you are on the right site when at the end of the URL it says "/course".
 
 To get the _domestika_session and the \_credentials_ you will need to install a chrome extension called Cookie-Editor.
 
