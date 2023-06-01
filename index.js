@@ -11,10 +11,11 @@ const fetch = require("node-fetch");
 const debug = false;
 const debug_data = [];
 
-const session= 'JCq%2BsBo%2F3s1CRHdif6vEqtACfOqrtbFrPZhhnPmSWlPTbF9dbsi1BT3hy47Bm4IANCYTlnVqOn9H%2B2KlJP4qv%2BRBYYG8paYJTBZipT7qUku7HIXbJFYXmuxkYNdhCEsHQmKhmJHloRxAsu%2BfZ%2BHfakUcvmUjHLxd6IpNZ%2FXA8PBupzhsBhAOghNLL3tZf%2FMCgHuIk1Oe%2BjXuv9UyZJEByivf4eBKTTnls4Tu132gDJav8k3BEVaVTpT2WjRfXDpbnmeZ%2FIfPt6zlXYuwiRu7VZD2vMHSJUQgycYFzpZdufUx4ujIIDovHqlpN9ZCi9UBodhETWwI04NTig7LzJG7dJHyLmtdnyRVnOYwL0gzVzb0O5jFxYbyf17zHAt24sn34LY%2BFkSVEy4caO0zlpi2KFqkgWjwF3D7IkUAmuDdi%2BZbfNJQ0KBacKff2nN6Bp%2Fp8Bbxj0D%2F4SZVY5qS1KTUYsuadG1bgps%2F2CR6yrMKB6PRtLru9mi5029JcILHHiuSxh2C2oVV6yRn%2Fz%2FrGeQ6LS6OBeWqaNnWoqJxLRgr4E%2Bb3%2FuoH9DcAlqMiWtgBriwPRCNs3gConOpHdtvWa16Cd4mwX3bS%2ByY3yDG9yUqhQeNa7SC1EM%3D--zbsnzjFlzSye41yb--X0nYrJGFmZXWIfZUtzkU2A%3D%3D';
+// _domestika_session
+const session= '';
 
 //Credentials needed for the access token to get the final project
-const _credentials_ = '{%22accessToken%22:%22hYtvKlM7jir8fM5L58_i9320QuQdYckJi67K098OQcE%22%2C%22refreshToken%22:%22lIEL-UhgWOxvjn7f3YcdsWzXWG_pfKyitPCQ1nhyzn8%22%2C%22isEmpty%22:false}';
+const _credentials_ = '';
 
 
 const subtitle_lang = 'en';
