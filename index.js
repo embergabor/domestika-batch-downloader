@@ -11,36 +11,50 @@ const fetch = require("node-fetch");
 const debug = false;
 const debug_data = [];
 
-// _domestika_session
-const session= '';
-
-//Credentials needed for the access token to get the final project
-const _credentials_ = '';
-
+let courseCoverURL = "";
 
 const subtitle_lang = 'en';
 
 //Cookie used to retreive video information
-const cookies = [
-    {
-        name: '_domestika_session',
-        value: session,
-        domain: 'www.domestika.org',
+let cookies = "";
+let access_token = "";
+
+function domestikadl(sessionCookie, credentialsCookie, courseUrls, clientSocket) {
+    const originalConsoleLog = console.log;
+    console.log = (...args) => {
+        clientSocket.send(args.join(' '));
+        originalConsoleLog.apply(console, args);
+    };
+
+    const originalConsoleError = console.error;
+    console.error = (...args) => {
+        clientSocket.send(args.join(' '));
+        originalConsoleError.apply(console, args);
+    };
+
+    console.log("sessionCookie " + sessionCookie);
+    console.log("credentialsCookie " + credentialsCookie);
+    console.log("courseUrls " + courseUrls);
+
+    if (!fs.existsSync('N_m3u8DL-RE')) {
+        throw Error('N_m3u8DL-RE.exe not found! Download the Binary here: https://github.com/nilaoda/N_m3u8DL-RE/releases')
     }
-];
 
-let courseCoverURL = "";
+    //Cookie used to retreive video information
+    cookies = [
+        {
+            name: '_domestika_session',
+            value: sessionCookie,
+            domain: 'www.domestika.org',
+        }
+    ];
 
-//Get access token from the credentials
-let access_token = decodeURI(_credentials_);
-let regex_token = /accessToken\":\"(.*?)\"/gm;
-access_token = regex_token.exec(access_token)[1];
+    //Get access token from the credentials
+    let at = decodeURI(credentialsCookie);
+    let regex_token = /accessToken\":\"(.*?)\"/gm;
+    access_token = regex_token.exec(at)[1];
 
-//Check if the N_m3u8DL-RE.exe exists, throw error if not
-if (fs.existsSync('N_m3u8DL-RE')) {
-    downloadCourses();
-} else {
-    throw Error('N_m3u8DL-RE.exe not found! Download the Binary here: https://github.com/nilaoda/N_m3u8DL-RE/releases');
+    downloadCourses(courseUrls);
 }
 
 async function asyncReadFile(filename) {
@@ -58,8 +72,9 @@ async function asyncReadFile(filename) {
     }
 }
 
-async function downloadCourses() {
-    const course_urls = await asyncReadFile("input.txt");
+async function downloadCourses(courseUrls) {
+    //const course_urls = await asyncReadFile("input.txt");
+    const course_urls = courseUrls;
     for(let course of course_urls) {
         if(course.trim().length > 0) {
             try {
@@ -267,3 +282,5 @@ async function fetchFromApi(apiURL, accept_version, access_token) {
 
     return data;
 }
+
+module.exports = domestikadl;

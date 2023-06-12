@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Domestika Course Downloader</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" />
+  <style>
+    body {
+      padding: 2em;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .button {
+      display: inline-block;
+    }
+
+     textarea {
+       width: 80%;
+     }
+  </style>
+</head>
+<body>
+<h1>Domestika Course Downloader</h1>
+
+<form id="myForm">
+  <label for="arg1">Domestika session cookie</label>
+  <textarea id="arg1" name="arg1" required></textarea>
+
+  <label for="arg2">Domestika credentials cookie</label>
+  <textarea id="arg2" name="arg2" required></textarea>
+
+  <label for="textarea">Domestika course URLs</label>
+  <textarea id="textarea" name="textarea" required style="height:150px"></textarea>
+<br/>
+  <input type="submit" value="Submit">
+</form>
+
+
+
+<hr>
+<label for="logs">Logs</label>
+<textarea id="logs" style="height:300px" readonly></textarea>
+
+<script>
+  const form = document.getElementById('myForm');
+  const logsTextarea = document.getElementById('logs');
+
+  const socket = new WebSocket('ws://localhost:3000');
+
+  socket.onopen = () => {
+    console.log('WebSocket connection established.');
+  };
+
+  socket.onmessage = (event) => {
+    const message = event.data;
+    console.log('Received message:', message);
+    appendMessageToTextArea(message);
+  };
+
+  socket.onclose = () => {
+    console.log('WebSocket connection closed.');
+  };
+
+  socket.onerror = (error) => {
+    console.error('WebSocket error:', error);
+  };
+
+  fetch('https://domestika.org', {
+    credentials: 'include',
+    mode: 'cors'
+  })
+          .then(response => {
+            // Log the cookies from the response
+            const cookies = response.headers.get('Set-Cookie');
+            console.log('Cookies:', cookies);
+
+            return response.text();
+          })
+          .then(content => {
+            console.log(content);
+            // Process the webpage content here
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          });
+
+  function appendMessageToTextArea(message) {
+    logsTextarea.value += message + '\n';
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    // Manually construct the request body as a JSON object
+    const requestBody = {
+      arg1: form.arg1.value,
+      arg2: form.arg2.value,
+      textarea: form.textarea.value,
+    };
+    const response = await fetch('/submit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+  });
+</script>
+</body>
+</html>
