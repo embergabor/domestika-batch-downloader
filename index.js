@@ -2,10 +2,8 @@ const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
-const m3u8ToMp4 = require('m3u8-to-mp4');
 const fs = require('fs');
 const fsPromises = require('fs').promises;
-const converter = new m3u8ToMp4();
 const fetch = require("node-fetch");
 
 const debug = false;
@@ -15,7 +13,7 @@ let courseCoverURL = "";
 
 const subtitle_lang = 'en';
 
-//Cookie used to retreive video information
+//Cookie used to retrieve video information
 let cookies = "";
 let access_token = "";
 
@@ -40,7 +38,7 @@ function domestikadl(sessionCookie, credentialsCookie, courseUrls, clientSocket)
         throw Error('N_m3u8DL-RE.exe not found! Download the Binary here: https://github.com/nilaoda/N_m3u8DL-RE/releases')
     }
 
-    //Cookie used to retreive video information
+    //Cookie used to retrieve video information
     cookies = [
         {
             name: '_domestika_session',
@@ -73,9 +71,7 @@ async function asyncReadFile(filename) {
 }
 
 async function downloadCourses(courseUrls) {
-    //const course_urls = await asyncReadFile("input.txt");
-    const course_urls = courseUrls;
-    for(let course of course_urls) {
+    for(let course of courseUrls) {
         if(course.trim().length > 0) {
             try {
                 if (!course.endsWith("/course")) {
@@ -136,7 +132,7 @@ async function scrapeSite(course_url) {
     final_project_id = final_data.data.relationships.video.data.id;
     final_data = await fetchFromApi(`https://api.domestika.org/api/videos/${final_project_id}?with_server_timing=true`, 'video.v1', access_token);
 
-    if(final_data.data.attributes.playbackUrl && final_data.data.attributes.playbackUrl != undefined) {
+    if(final_data.data.attributes.playbackUrl && final_data.data.attributes.playbackUrl !== undefined) {
         allVideos.push({
             title: 'U9-Final_project',
             videoData: [{ playbackURL: final_data.data.attributes.playbackUrl,
@@ -165,12 +161,19 @@ async function scrapeSite(course_url) {
             }
 
 
-            const unitNumber = unit.title == "Final-project" ? "S9" : unit.title.slice(0, 2).replace("U","S");
+            const unitNumber = unit.title === "Final-project" ? "S9" : unit.title.slice(0, 2).replace("U","S");
             const filename = unitNumber + "E" + (a+1) + "-" + vData.title.trim().replace(/[/\\?!%*':|"<>]/g, '').replaceAll(" ", "-");
             console.log("domestika_courses/" + title + "/" + unit.title + "/" + filename + ".mp4");
+
             if (!fs.existsSync("domestika_courses/" + title + "/" + unit.title + "/" + filename + ".mp4")) {
                 let log = await exec(`./N_m3u8DL-RE -sv res="1080*":codec=hvc1:for=best "${vData.playbackURL}" --save-dir "domestika_courses/${title}/${unit.title}" --save-name "${filename}" --auto-subtitle-fix --sub-format SRT --select-subtitle lang="${subtitle_lang}" -M format=mp4`);
                 await exec(`ffmpeg -i "domestika_courses/${title}/${unit.title}/${filename}.mp4" -metadata title="${vData.title}" -c copy -scodec copy temp.mp4 && mv temp.mp4 "domestika_courses/${title}/${unit.title}/${filename}.mp4"`);
+                if (debug) {
+                    debug_data.push({
+                        videoURL: vData.playbackURL,
+                        output: [log],
+                    });
+                }
             } else {
                 console.log("Already downloaded");
             }
@@ -179,12 +182,7 @@ async function scrapeSite(course_url) {
             console.log("thumbnailurl: " + thumbnailURL);
             downloadImage(thumbnailURL, "domestika_courses/" + title + "/" + unit.title, filename + ".jpg")
 
-            if (debug) {
-                debug_data.push({
-                    videoURL: vData.playbackURL,
-                    output: [log, log2],
-                });
-            }
+
 
             count++;
             console.log(`Download ${count}/${totalVideos} Downloaded`);
@@ -193,11 +191,6 @@ async function scrapeSite(course_url) {
     }
 
     await browser.close();
-
-    /*if (!fs.existsSync(`domestika_courses/${title}/${title}.mkv`)) {
-      const mergelog = await exec(`./merge_chapters.sh domestika_courses/${title}`);
-      console.log(mergelog);
-    }*/
 
     if (debug) {
         fs.writeFileSync('log.json', JSON.stringify(debug_data));
@@ -238,8 +231,8 @@ async function getInitialProps(url) {
 
     let videoData = [];
 
-    if (data && data != undefined) {
-        if(data.videos && data.videos != undefined) {
+    if (data && data !== undefined) {
+        if(data.videos && data.videos !== undefined) {
             for (let i = 0; i < data.videos.length; i++) {
                 const el = data.videos[i];
                 videoData.push({
@@ -247,12 +240,14 @@ async function getInitialProps(url) {
                     title: el.video.title,
                     chapterThumb: el.video.cover
                 });
-
             }
-            console.log("data course cover: " + data.course.cover);
-            courseCoverURL = data.course.cover;
+            if(courseCoverURL === "") {
+                console.log("data course cover: " + data.course.cover);
+                courseCoverURL = data.course.cover;
+            }
+        } else if (data.video && data.video !== undefined) {
+            // trailer
 
-        } else if (data.video && data.video != undefined) {
             /*const el = data.video;
             videoData.push({
                 playbackURL: el.playbackURL,
@@ -278,9 +273,7 @@ async function fetchFromApi(apiURL, accept_version, access_token) {
             authorization: `Bearer ${access_token}`,
         },
     });
-    const data = await response.json();
-
-    return data;
+    return await response.json();
 }
 
 module.exports = domestikadl;

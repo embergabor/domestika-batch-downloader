@@ -10,10 +10,6 @@ const wss = new WebSocket.Server({ server });
 // Serve static files from the "public" directory
 app.use(express.static('public'));
 
-app.use(cors());
-
-app.use(express.json());
-
 // Parse URL-encoded bodies (as sent by HTML forms)
 app.use(express.urlencoded({ extended: false }));
 
@@ -32,18 +28,14 @@ wss.on('connection', (ws) => {
 // Define a route to handle form submission
 app.post('/submit', (req, res) => {
 
-
     const arg1 = req.body.arg1;
     const arg2 = req.body.arg2;
     const textareaValue = req.body.textarea.split('\n');
 
-    // Perform your long-running logic with the arguments received
-    // Replace the following console.log statement with your desired logic
     console.log(`Received arguments: arg1=${arg1}, arg2=${arg2}, textarea=${textareaValue}`);
 
     // Send an acknowledge response
     res.send(`Received arguments: arg1=${arg1}, arg2=${arg2}, textarea=${textareaValue}`);
-
 
     domestikadl(arg1, arg2, textareaValue, clientSocket);
 });

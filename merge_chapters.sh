@@ -26,7 +26,7 @@ echo "Processing files in: $path"
   mkv_files=$(find "$path" -type f -name "*.mp4" -print0 | sort -z | tr '\0' ' ' | sed 's/ $//' | sed 's/ / + /g')
   mkv_files="${mkv_files# + }"  # Remove leading space and plus sign
 
-  mkvmerge -o "$path/$folder_name.mkv" --generate-chapters when-appending --generate-chapters-name-template "<FILE_NAME>" $mkv_files
+  mkvmerge -o "$path/$folder_name.mkv" --generate-chapters when-appending --generate-chapters-name-template "<FILE_NAME>" "$mkv_files"
 
   chapter_file="$path/chapter.xml"
   mkvextract "$path/$folder_name.mkv" chapters "$chapter_file"
