@@ -5,6 +5,7 @@ const exec = util.promisify(require('child_process').exec);
 const fs = require('fs');
 const fsPromises = require('fs').promises;
 const fetch = require("node-fetch");
+const {all} = require("express/lib/application");
 
 const debug = false;
 const debug_data = [];
@@ -17,8 +18,8 @@ const subtitle_lang = 'en';
 let cookies = "";
 let access_token = "";
 
-function domestikadl(sessionCookie, credentialsCookie, courseUrls, clientSocket) {
-    const originalConsoleLog = console.log;
+function domestikadl(sessionCookie, credentialsCookie, courseUrls) {
+    /*const originalConsoleLog = console.log;
     console.log = (...args) => {
         clientSocket.send(args.join(' '));
         originalConsoleLog.apply(console, args);
@@ -28,7 +29,7 @@ function domestikadl(sessionCookie, credentialsCookie, courseUrls, clientSocket)
     console.error = (...args) => {
         clientSocket.send(args.join(' '));
         originalConsoleError.apply(console, args);
-    };
+    };*/
 
     console.log("sessionCookie " + sessionCookie);
     console.log("credentialsCookie " + credentialsCookie);
@@ -38,6 +39,12 @@ function domestikadl(sessionCookie, credentialsCookie, courseUrls, clientSocket)
         throw Error('N_m3u8DL-RE not found! Download the Binary here: https://github.com/nilaoda/N_m3u8DL-RE/releases')
     }
 
+    setAuth(sessionCookie, credentialsCookie);
+
+    downloadCourses(courseUrls);
+}
+
+function setAuth(sessionCookie, credentialsCookie) {
     //Cookie used to retrieve video information
     cookies = [
         {
@@ -51,8 +58,6 @@ function domestikadl(sessionCookie, credentialsCookie, courseUrls, clientSocket)
     let at = decodeURI(credentialsCookie);
     let regex_token = /accessToken\":\"(.*?)\"/gm;
     access_token = regex_token.exec(at)[1];
-
-    downloadCourses(courseUrls);
 }
 
 async function asyncReadFile(filename) {
@@ -71,14 +76,19 @@ async function asyncReadFile(filename) {
 }
 
 async function downloadCourses(courseUrls) {
+
+    let allCourses =  [];
+
     for(let course of courseUrls) {
+        let courseData
         if(course.trim().length > 0) {
             try {
                 if (!course.endsWith("/course")) {
                     course += "/course";
                 }
                 console.log(course);
-                await scrapeSite(course);
+                courseData = await scrapeSite(course);
+
             } catch (error) {
                 console.error('An error occurred:', error.message);
                 if (error.message.includes("Unexpected end of JSON")) {
@@ -88,15 +98,25 @@ async function downloadCourses(courseUrls) {
                 break;
             }
         }
+        allCourses.push(courseData);
     }
+
+    // Convert the array to JSON
+    const jsonArray = JSON.stringify(allCourses, null, 2);
+
+    // Save the JSON array to a file
+    fs.writeFileSync('courses.json', jsonArray);
+
+    console.log("courses.json created");
+
 }
 
-async function scrapeSite(course_url) {
+async function scrapeSite(courseUrl) {
     //Scrape site for links to videos
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.setCookie(...cookies);
-    await page.goto(course_url);
+    await page.goto(courseUrl);
     const html = await page.content();
     const $ = cheerio.load(html);
 
@@ -107,48 +127,67 @@ async function scrapeSite(course_url) {
     let title = $('h1.course-header-new__title')
         .text()
         .trim()
-        .replace(/[/\\?!%*:\'\’|"<>]/g, '').replaceAll(" ","-");
+        .replace(/[/\\?!%*:\'\’|"<>]/g, '').replaceAll(" ", "-");
 
     console.log("Title: " + title);
-    let totalVideos = 1;
 
     //Get all the links to the m3u8 files
-    for (let i = 0; i < units.length ; i++) {
-        let videoData = await getInitialProps($(units[i]).attr('href'));
+    for (let i = 0; i < units.length; i++) {
+        let videoData = await getVideoData( $(units[i]).attr('href'));
         allVideos.push({
             title: $(units[i])
                 .text()
                 .trim()
-                .replace(/[/\\?!%*:|"<>]/g, '').replaceAll(" ","-"),
+                .replace(/[/\\?!%*:|"<>]/g, '').replaceAll(" ", "-"),
             videoData: videoData,
         });
-
-        totalVideos += videoData.length;
     }
 
-   let regex_final = /courses\/(.*?)-/gm;
+    let regex_final = /courses\/(.*?)-/gm;
     let final_project_id = regex_final.exec($(units[units.length - 1]).attr('href'))[1];
     let final_data = await fetchFromApi(`https://api.domestika.org/api/courses/${final_project_id}/final-project?with_server_timing=true`, 'finalProject.v1', access_token);
     final_project_id = final_data.data.relationships.video.data.id;
     final_data = await fetchFromApi(`https://api.domestika.org/api/videos/${final_project_id}?with_server_timing=true`, 'video.v1', access_token);
 
-    if(final_data.data.attributes.playbackUrl && final_data.data.attributes.playbackUrl !== undefined) {
+    if (final_data.data.attributes.playbackUrl && final_data.data.attributes.playbackUrl !== undefined) {
         allVideos.push({
             title: 'U9-Final_project',
-            videoData: [{ playbackURL: final_data.data.attributes.playbackUrl,
+            videoData: [{
+                status: "added",
+                playbackURL: final_data.data.attributes.playbackUrl,
                 title: 'Final project',
                 chapterThumb: final_data.data.attributes.cover.original.url
             }],
         });
     }
 
+    const courseData = {
+        status: added,
+        downloadedState: "0",
+        courseUrl: courseUrl,
+        courseTitle: title,
+        courseCoverURL: courseCoverURL,
+        allVideos: allVideos
+    }
 
-    //Loop through all files and download them
+    //fs.writeFileSync('objects.json', courseData);
 
+    //store course data in queue
+
+    //downloadCourse(courseData);
+
+    return courseData;
+
+    
+}
+
+async function downloadCourse(courseData) {
 
     let count = 0;
-    console.log("courseThumb: " + courseCoverURL);
-    downloadImage(courseCoverURL, "domestika_courses/" + title, "poster.jpg")
+    const allVideos = courseData.allVideos;
+    const title = courseData.courseTitle;
+
+    downloadImage(courseData.courseCoverURL, "domestika_courses/" + title, "poster.jpg")
 
     for (let i = 0; i < allVideos.length; i++) {
         const unit = allVideos[i];
@@ -185,19 +224,17 @@ async function scrapeSite(course_url) {
 
 
             count++;
-            console.log(`Download ${count}/${totalVideos} Downloaded`);
+            console.log(`Download ${count}/${allVideos.length} Downloaded`);
         }
 
     }
-
-    await browser.close();
 
     if (debug) {
         fs.writeFileSync('log.json', JSON.stringify(debug_data));
         console.log('Log File Saved');
     }
 
-    console.log('All Videos Downloaded');
+    console.log('All Videos Downloaded for Course: ' + title);
 }
 
 function downloadImage(imageUrl, destinationPath, filename) {
@@ -221,7 +258,7 @@ function downloadImage(imageUrl, destinationPath, filename) {
     });
 }
 
-async function getInitialProps(url) {
+async function getVideoData(url) {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.setCookie(...cookies);
@@ -236,6 +273,7 @@ async function getInitialProps(url) {
             for (let i = 0; i < data.videos.length; i++) {
                 const el = data.videos[i];
                 videoData.push({
+                    status: "added",
                     playbackURL: el.video.playbackURL,
                     title: el.video.title,
                     chapterThumb: el.video.cover
@@ -251,7 +289,7 @@ async function getInitialProps(url) {
             /*const el = data.video;
             videoData.push({
                 playbackURL: el.playbackURL,
-                title: "Final project",
+                title: "Trailer",
                 chapterThumb: el.cover
             });*/
         }

@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
+const fs = require('fs');
 const domestikadl = require('./index.js');
 
 const app = express();
@@ -20,10 +21,45 @@ app.use(express.json());
 let clientSocket = null;
 
 // WebSocket event handlers
+let connectedClients = new Set();
+
 wss.on('connection', (ws) => {
-    clientSocket = ws;
-    console.log('Client connected');
+    connectedClients.add(ws);
+
+    ws.on('message', (message) => {
+        console.log('Received message from client:', message);
+    });
+
+    ws.on('close', () => {
+        connectedClients.delete(ws);
+    });
 });
+
+function broadcast(data) {
+    connectedClients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(data));
+        }
+    });
+}
+
+function readFileAndSendData() {
+    const data = fs.readFileSync('courses.json', 'utf8');
+    const jsonData = JSON.parse(data);
+    const message = JSON.stringify(jsonData);
+
+    connectedClients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(message);
+        }
+    });
+}
+
+// Call the method initially
+readFileAndSendData();
+
+// Schedule the method to run every 5 seconds
+setInterval(readFileAndSendData, 5000);
 
 // Define a route to handle form submission
 app.post('/submit', (req, res) => {
@@ -37,7 +73,7 @@ app.post('/submit', (req, res) => {
     // Send an acknowledge response
     res.send(`Received arguments: arg1=${arg1}, arg2=${arg2}, textarea=${textareaValue}`);
 
-    domestikadl(arg1, arg2, textareaValue, clientSocket);
+    domestikadl(arg1, arg2, textareaValue);
 });
 
 // Start the server

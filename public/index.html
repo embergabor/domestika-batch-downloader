@@ -35,57 +35,62 @@
   <label for="textarea">Domestika course URLs</label>
   <textarea id="textarea" name="textarea" required style="height:150px"></textarea>
 <br/>
-  <input type="submit" value="Submit">
+  <input type="submit" value="Add">
 </form>
 
-
-
 <hr>
-<label for="logs">Logs</label>
-<textarea id="logs" style="height:300px" readonly></textarea>
+
+<table id="data-table" class="u-full-width table-bordered">
+  <thead>
+  <tr>
+    <th>Message</th>
+  </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
 <script>
   const form = document.getElementById('myForm');
-  const logsTextarea = document.getElementById('logs');
+
+  const tableBody = document.getElementById('data-table');
 
   const socket = new WebSocket('ws://localhost:3000');
 
-  socket.onopen = () => {
-    console.log('WebSocket connection established.');
-  };
+  socket.addEventListener('open', (event) => {
+    console.log('WebSocket connection established');
+  });
 
-  socket.onmessage = (event) => {
-    const message = event.data;
-    console.log('Received message:', message);
-    appendMessageToTextArea(message);
-  };
+  socket.addEventListener('message', (event) => {
+    const data = JSON.parse(event.data);
+    console.log('Received JSON data:', data);
 
-  socket.onclose = () => {
-    console.log('WebSocket connection closed.');
-  };
+    // Clear the table body
+    tableBody.innerHTML = '';
 
-  socket.onerror = (error) => {
-    console.error('WebSocket error:', error);
-  };
+    // Populate the table with the new data
+    data.forEach((course) => {
+      course.allVideos.forEach((video) => {
+        const row = document.createElement('tr');
+        let messageCell = document.createElement('td');
+        messageCell.textContent = video.videoData[0].status;
+        row.appendChild(messageCell);
+         messageCell = document.createElement('td');
+        messageCell.textContent = course.courseTitle + ' ' +  video.title + ' ' +  video.videoData[0].title ;
+        row.appendChild(messageCell);
+        tableBody.appendChild(row);
+      })
+    });
+  });
 
-  fetch('https://domestika.org', {
-    credentials: 'include',
-    mode: 'cors'
-  })
-          .then(response => {
-            // Log the cookies from the response
-            const cookies = response.headers.get('Set-Cookie');
-            console.log('Cookies:', cookies);
+  socket.addEventListener('close', (event) => {
+    console.log('WebSocket connection closed');
 
-            return response.text();
-          })
-          .then(content => {
-            console.log(content);
-            // Process the webpage content here
-          })
-          .catch(error => {
-            console.error('Error:', error);
-          });
+    // Reconnect when the HTML page is reopened
+    setTimeout(() => {
+      const socket = new WebSocket('ws://localhost:3000');
+      // Add event listeners and handle incoming messages as needed
+    }, 1000);
+  });
 
   function appendMessageToTextArea(message) {
     logsTextarea.value += message + '\n';
