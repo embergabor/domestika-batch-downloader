@@ -71,10 +71,6 @@ async function asyncReadFile(filename) {
 }
 
 async function downloadCourses(courseUrls) {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.setCookie(...cookies);
-
     for(let course of courseUrls) {
         if(course.trim().length > 0) {
             try {
@@ -82,7 +78,7 @@ async function downloadCourses(courseUrls) {
                     course += "/course";
                 }
                 console.log(course);
-                await scrapeSite(page, course);
+                await scrapeSite(course);
             } catch (error) {
                 console.error('An error occurred:', error.message);
                 if (error.message.includes("Unexpected end of JSON")) {
@@ -93,12 +89,13 @@ async function downloadCourses(courseUrls) {
             }
         }
     }
-
-    await browser.close();
 }
 
-async function scrapeSite(page, course_url) {
+async function scrapeSite(course_url) {
     //Scrape site for links to videos
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.setCookie(...cookies);
     await page.goto(course_url);
     const html = await page.content();
     const $ = cheerio.load(html);
@@ -117,7 +114,7 @@ async function scrapeSite(page, course_url) {
 
     //Get all the links to the m3u8 files
     for (let i = 0; i < units.length ; i++) {
-        let videoData = await getInitialProps(page, $(units[i]).attr('href'));
+        let videoData = await getInitialProps($(units[i]).attr('href'));
         allVideos.push({
             title: $(units[i])
                 .text()
@@ -193,6 +190,8 @@ async function scrapeSite(page, course_url) {
 
     }
 
+    await browser.close();
+
     if (debug) {
         fs.writeFileSync('log.json', JSON.stringify(debug_data));
         console.log('Log File Saved');
@@ -222,7 +221,10 @@ function downloadImage(imageUrl, destinationPath, filename) {
     });
 }
 
-async function getInitialProps(page, url) {
+async function getInitialProps(url) {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.setCookie(...cookies);
     await page.goto(url);
 
     const data = await page.evaluate(() => window.__INITIAL_PROPS__);
@@ -254,6 +256,8 @@ async function getInitialProps(page, url) {
             });*/
         }
     }
+
+    await browser.close();
 
     return videoData;
 }
