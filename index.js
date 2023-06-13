@@ -34,8 +34,8 @@ function domestikadl(sessionCookie, credentialsCookie, courseUrls, clientSocket)
     console.log("credentialsCookie " + credentialsCookie);
     console.log("courseUrls " + courseUrls);
 
-    if (!fs.existsSync('N_m3u8DL-RE')) {
-        throw Error('N_m3u8DL-RE.exe not found! Download the Binary here: https://github.com/nilaoda/N_m3u8DL-RE/releases')
+    if (!fs.existsSync('N_m3u8DL-RE') && !fs.existsSync('N_m3u8DL-RE.exe')) {
+        throw Error('N_m3u8DL-RE not found! Download the Binary here: https://github.com/nilaoda/N_m3u8DL-RE/releases')
     }
 
     //Cookie used to retrieve video information
