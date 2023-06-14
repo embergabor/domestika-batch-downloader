@@ -32,72 +32,134 @@
   <label for="arg2">Domestika credentials cookie</label>
   <textarea id="arg2" name="arg2" required></textarea>
 
+  <label for="quality">Quality</label>
+  <select id="quality">
+    <option value="2160">2160p</option>
+    <option value="1080" selected>1080p</option>
+    <option value="720">720p</option>
+  </select>
+
+  <label for="subtitle">Subtitle Language</label>
+  <select id="subtitle">
+    <option value="en" selected>English</option>
+    <option value="es">Español</option>
+    <option value="pt">Português</option>
+    <option value="de">Deutsch</option>
+    <option value="fr">Français</option>
+    <option value="it">Italiano</option>
+    <option value="pl">Polski</option>
+    <option value="nl">Nederlands</option>
+  </select>
+
   <label for="textarea">Domestika course URLs</label>
   <textarea id="textarea" name="textarea" required style="height:150px"></textarea>
 <br/>
-  <input type="submit" value="Submit">
+  <input type="submit" value="Add">
 </form>
 
+<form id="startForm">
+  <input type="submit" value="Start Download">
+</form>
 
+<div id="statusdiv"></div>
 
 <hr>
-<label for="logs">Logs</label>
-<textarea id="logs" style="height:300px" readonly></textarea>
+
+<table  class="u-full-width table-bordered">
+  <thead>
+  <tr>
+    <td>Status</td>
+    <td>Quality</td>
+    <td>Lesson Title</td>
+  </tr>
+  </thead>
+  <tbody id="data-table"></tbody>
+</table>
 
 <script>
   const form = document.getElementById('myForm');
-  const logsTextarea = document.getElementById('logs');
+
+  const tableBody = document.getElementById('data-table');
+
+  const startForm = document.getElementById('startForm');
 
   const socket = new WebSocket('ws://localhost:3000');
 
-  socket.onopen = () => {
-    console.log('WebSocket connection established.');
-  };
+  socket.addEventListener('open', (event) => {
+    console.log('WebSocket connection established');
+  });
 
-  socket.onmessage = (event) => {
-    const message = event.data;
-    console.log('Received message:', message);
-    appendMessageToTextArea(message);
-  };
+  socket.addEventListener('message', (event) => {
+    console.log(event);
+    if(event.data.startsWith("status")) {
+      document.getElementById("statusdiv").innerHTML = event.data;
+    } else {
+      const data = JSON.parse(event.data);
+      console.log('Received JSON data:', data);
 
-  socket.onclose = () => {
-    console.log('WebSocket connection closed.');
-  };
+      // Clear the table body
+      tableBody.innerHTML = '';
 
-  socket.onerror = (error) => {
-    console.error('WebSocket error:', error);
-  };
-
-  fetch('https://domestika.org', {
-    credentials: 'include',
-    mode: 'cors'
-  })
-          .then(response => {
-            // Log the cookies from the response
-            const cookies = response.headers.get('Set-Cookie');
-            console.log('Cookies:', cookies);
-
-            return response.text();
-          })
-          .then(content => {
-            console.log(content);
-            // Process the webpage content here
-          })
-          .catch(error => {
-            console.error('Error:', error);
+      // Populate the table with the new data
+      data.forEach((course) => {
+        course.allVideos.forEach((unit) => {
+          unit.videoData.forEach((video) => {
+            const row = document.createElement('tr');
+            let messageCell = document.createElement('td');
+            messageCell.textContent = video.status;
+            row.appendChild(messageCell);
+            messageCell = document.createElement('td');
+            messageCell.textContent = course.quality + " " + course.subtitle ;
+            row.appendChild(messageCell);
+            messageCell = document.createElement('td');
+            messageCell.textContent = course.courseTitle + ' ' +  unit.title + ' ' +  video.title ;
+            row.appendChild(messageCell);
+            tableBody.appendChild(row);
           });
+        });
+      });
+    }
+  });
+
+  socket.addEventListener('close', (event) => {
+    console.log('WebSocket connection closed');
+
+    // Reconnect when the HTML page is reopened
+    setTimeout(() => {
+      const socket = new WebSocket('ws://localhost:3000');
+      // Add event listeners and handle incoming messages as needed
+    }, 1000);
+  });
 
   function appendMessageToTextArea(message) {
     logsTextarea.value += message + '\n';
   }
 
+
+  // Load saved values from localStorage, if any
+  const savedValue1 = localStorage.getItem('input1');
+  const savedValue2 = localStorage.getItem('input2');
+
+  if (savedValue1) {
+    form.arg1.value = savedValue1;
+  }
+
+  if (savedValue2) {
+    form.arg2.value = savedValue2;
+  }
+
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
+
+    localStorage.setItem('input1', form.arg1.value);
+    localStorage.setItem('input2', form.arg2.value);
 
     // Manually construct the request body as a JSON object
     const requestBody = {
       arg1: form.arg1.value,
       arg2: form.arg2.value,
+      arg3: form.quality.value,
+      arg4: form.subtitle.value,
       textarea: form.textarea.value,
     };
     const response = await fetch('/submit', {
@@ -106,6 +168,14 @@
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
+    });
+  });
+
+  startForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const response = await fetch('/startMethod', {
+      method: 'POST'
     });
   });
 </script>

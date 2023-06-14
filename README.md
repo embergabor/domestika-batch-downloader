@@ -8,6 +8,8 @@ Every course is handled as a 'Show' and every unit is a new 'Season'. This tool 
 
 ![screen.png](images%2Fscreen.png)
 
+![screen2.png](images%2Fscreen2.png)
+
 ![plex1.png](images%2Fplex1.png)
 
 ![plex2.png](images%2Fplex2.png)
