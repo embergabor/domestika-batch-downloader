@@ -12,6 +12,8 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+const downloadDir = "domestika_courses";
+
 // Serve static files from the "public" directory
 app.use(express.static('public'));
 
@@ -348,10 +350,33 @@ async function fetchFromApi(apiURL, accept_version, access_token) {
 
 async function downloadCourses(){
     const courseDataArray = readQueue();
+    let workers = [];
+    const parallelWorkers = 4;
 
     for (let i = 0; i < courseDataArray.length; i++) {
-        await downloadCourse(courseDataArray[i]);
+        // Run the worker function for each item
+        const workerPromise = worker(courseDataArray[i]);
+
+        workers.push(workerPromise); // Store the worker promise
+
+        // If the number of workers reaches the parallel limit,
+        // wait for them to complete before starting new workers
+        if (workers.length >= parallelWorkers) {
+            await Promise.all(workers);
+            workers.length = 0; // Reset the workers array
+        }
     }
+
+    // Wait for any remaining workers to complete
+    await Promise.all(workers);
+}
+
+// Define the worker function that handles each iteration
+function worker(courseData) {
+    return new Promise(async (resolve, reject) => {
+        await downloadCourse(courseData);
+        resolve();
+    });
 }
 
 async function downloadCourse(courseData) {
@@ -360,11 +385,16 @@ async function downloadCourse(courseData) {
     const units = courseData.allVideos;
     const title = courseData.courseTitle;
 
-    if (!fs.existsSync(`domestika_courses/${title}/`)) {
-        fs.mkdirSync(`domestika_courses/${title}/`, {recursive: true});
+
+
+    if (!fs.existsSync(`${downloadDir}/${title}/`)) {
+        fs.mkdirSync(`${downloadDir}/${title}/`, {recursive: true});
     }
 
-    await downloadImage(courseData.courseCoverURL, "domestika_courses/" + title, "poster.jpg")
+    if(courseData.allVideos["0"].videoData.length !== 0) {
+        await downloadImage(courseData.allVideos[0].videoData[0].courseCoverURL, `${downloadDir}/` + title, "poster.jpg")
+
+    }
 
     for (let i = 0; i < units.length; i++) {
         const unit = units[i];
@@ -373,14 +403,14 @@ async function downloadCourse(courseData) {
             const vData = unit.videoData[a];
             const unitNumber = unit.title === "Final-project" ? "S9" : unit.title.slice(0, 2).replace("U", "S");
             const filename = unitNumber + "E" + (a + 1) + "-" + vData.title.trim().replace(/[/\\?!%*':|"<>]/g, '').replaceAll(" ", "-");
-            console.log("domestika_courses/" + title + "/" + unit.title + "/" + filename + ".mp4");
+            console.log(`${downloadDir}/` + title + "/" + unit.title + "/" + filename + ".mp4");
 
             broadcastMessage("status: Downloading " + title + " " + unit.title + " " + filename);
 
-            if(vData.status !== "Done") {
+            if(vData.status !== "Done" && vData.status !== "Error") {
 
-                if (!fs.existsSync(`domestika_courses/${title}/${unit.title}/`)) {
-                    fs.mkdirSync(`domestika_courses/${title}/${unit.title}/`, {recursive: true});
+                if (!fs.existsSync(`${downloadDir}/${title}/${unit.title}/`)) {
+                    fs.mkdirSync(`${downloadDir}/${title}/${unit.title}/`, {recursive: true});
                 }
 
 
@@ -391,18 +421,24 @@ async function downloadCourse(courseData) {
                 console.log("thumbnailurl: " + thumbnailURL);
 
                 // Download thumbnail
-                await downloadImage(thumbnailURL, "domestika_courses/" + title + "/" + unit.title, filename + ".jpg")
+                await downloadImage(thumbnailURL, `${downloadDir}/` + title + "/" + unit.title, filename + ".jpg")
 
-                // Download video and mux subtitle
-                if (!fs.existsSync("domestika_courses/" + title + "/" + unit.title + "/" + filename + ".mp4")) {
-                    await exec(`./N_m3u8DL-RE -sv res="${courseData.quality}*":codec=hvc1:for=best "${vData.playbackURL}" --save-dir "domestika_courses/${title}/${unit.title}" --save-name "${filename}" --auto-subtitle-fix --sub-format SRT --select-subtitle lang="${courseData.subtitle}" -M format=mp4 > download.log`);
-                } else {
-                    console.log("Already downloaded");
+                try {
+                    // Download video and mux subtitle
+                    if (!fs.existsSync(`${downloadDir}/` + title + "/" + unit.title + "/" + filename + ".mp4")) {
+                        await exec(`./N_m3u8DL-RE -sv res="${courseData.quality}*":codec=hvc1:for=best "${vData.playbackURL}" --save-dir "${downloadDir}/${title}/${unit.title}" --save-name "${filename}" --auto-subtitle-fix --sub-format SRT --select-subtitle lang="${courseData.subtitle}" -M format=mp4 > download.log`);
+                    } else {
+                        console.log("Already downloaded");
+                    }
+                    // Remux video and add title metadata
+                    await exec(`ffmpeg -y -i "${downloadDir}/${title}/${unit.title}/${filename}.mp4" -metadata title="${vData.title}" -c copy -scodec copy ${filename}-temp.mp4 && mv ${filename}-temp.mp4 "${downloadDir}/${title}/${unit.title}/${filename}.mp4"`);
+
+                    courseData.allVideos[i].videoData[a].status = "Done";
+                } catch (error) {
+                    console.log(error);
+                    courseData.allVideos[i].videoData[a].status = "Error";
                 }
-                // Remux video and add title metadata
-                await exec(`ffmpeg -y -i "domestika_courses/${title}/${unit.title}/${filename}.mp4" -metadata title="${vData.title}" -c copy -scodec copy temp.mp4 && mv temp.mp4 "domestika_courses/${title}/${unit.title}/${filename}.mp4"`);
 
-                courseData.allVideos[i].videoData[a].status = "Done";
                 refreshQueue(courseData);
             } else {
                 console.log("Already downloaded status");
@@ -419,7 +455,7 @@ async function downloadCourse(courseData) {
 }
 
 async function downloadImage(imageUrl, destinationPath, filename) {
-    console.log("" + imageUrl);
+    console.log("imageUrl: " + imageUrl);
     const https = require('https');
     const fs = require('fs');
 
@@ -435,6 +471,17 @@ async function downloadImage(imageUrl, destinationPath, filename) {
             console.log('Image downloaded successfully.');
         });
     }).on('error', (err) => {
-        console.error('Error downloading the image:', err);
+        http.get(imageUrl.toString().replace("https","http"), (response) => {
+            response.on('data', (data) => {
+                file.write(data);
+            });
+
+            response.on('end', () => {
+                file.end();
+                console.log('Image downloaded successfully.');
+            });
+        }).on('error', (err) => {
+            console.error('Error downloading the image:', err);
+        });
     });
 }

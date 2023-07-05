@@ -83,7 +83,14 @@
 
   const startForm = document.getElementById('startForm');
 
-  const socket = new WebSocket('ws://localhost:3000');
+  const currentURL = window.location.href;
+  const url = new URL(currentURL);
+  const host = url.hostname;
+
+  // Assuming the WebSocket server is running on the same port as the current page
+  const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+
+  const socket = new WebSocket('ws://' + host + ':' + port);
 
   socket.addEventListener('open', (event) => {
     console.log('WebSocket connection established');

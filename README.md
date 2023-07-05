@@ -66,6 +66,12 @@ All the courses will be downloaded in a folder called "domestika_courses/{course
 > Your Domestika credentials (session cookies) are not stored or forwarded to any parties other than domestika.org. 
 > The login method can be considered as session hijacking. You may encounter more captcha verification popups on your next logins on domestika.org after using the downloader as the tools used for the downloader are recognized as possible bots.
 
+
+### Packaging
+```bash
+pkg --targets node14-linux-x64,node14-macos-x64 .
+```
+
 ## Configuring a Plex library for Domestika Downloader
 
 - Create a new TV Show Library

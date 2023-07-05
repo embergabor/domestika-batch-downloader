@@ -1,10 +1,21 @@
 {
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-        "cheerio": "^1.0.0-rc.12",
-        "express": "^4.18.2",
-        "m3u8-to-mp4": "^1.0.0",
-        "puppeteer": "^19.6.3"
-    }
+  "author": "Gábor Ember",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "express": "^4.18.2",
+    "m3u8-to-mp4": "^1.0.0",
+    "puppeteer": "^19.6.3"
+  },
+  "bin": {
+    "server": "./server.js"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "name": "domestika-batch-downloader",
+  "description": "**This is a fork of https://github.com/ReneR97/domestika-downloader**",
+  "version": "1.0.0",
+  "main": "server.js",
+  "devDependencies": {}
 }
